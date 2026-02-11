@@ -20,12 +20,13 @@ P
 ARP Server:
 ```
 import socket
-
 s = socket.socket()
 s.bind(('localhost', 8000))
 s.listen(5)
-print("ARP Server is listening on port 8000...")
+print("Server is listening...")
+
 c, addr = s.accept()
+print(f"Connection established with {addr}")
 
 address = {
     "165.165.80.80": "6A:08:AA:C2",
@@ -34,79 +35,99 @@ address = {
 
 while True:
     ip = c.recv(1024).decode()
-    print(f"Received IP: {ip}")
-    mac = address.get(ip, "Not Found")
-    c.send(mac.encode())
+
+    if not ip:  
+        break
+
+    try:
+        mac = address[ip]  # Get the MAC address for the IP
+        print(f"IP: {ip} -> MAC: {mac}")
+        c.send(mac.encode())  
+    except KeyError:
+        print(f"IP: {ip} not found in ARP table.")
+        c.send("Not Found".encode())
+c.close()
+s.close()
 ```
 ARP Client:
 ```
 import socket
-
-s = socket.socket()
-s.connect(('localhost', 8000))
+c = socket.socket()
+c.connect(('localhost', 8000))
 
 while True:
-    ip = input("Enter Logical Address (IP): ")
-    s.send(ip.encode())
-    print("MAC Address:", s.recv(1024).decode())
+    ip = input("Enter IP address to find MAC (or type 'exit' to quit): ")
+
+    if ip.lower() == "exit":  
+        break
+
+    c.send(ip.encode())
+    mac = c.recv(1024).decode()
+    print(f"MAC Address for {ip}: {mac}")
+c.close()
 ```
 ## OUPUT - ARP
-```
-Client Input:
-Enter Logical Address (IP): 165.165.80.80
+Server:
+![WhatsApp Image 2026-02-11 at 10 58 35 AM](https://github.com/user-attachments/assets/ec78dc70-a814-498c-abc6-ae67afb9df17)
+Client:
+![WhatsApp Image 2026-02-11 at 10 58 35 AM (1)](https://github.com/user-attachments/assets/27931e0b-26f4-49e0-b4c4-d5254d865aae)
 
-Server Output:
-Received IP: 165.165.80.80
 
-Client Output:
-MAC Address: 6A:08:AA:C2
-```
 ## PROGRAM - RARP
 Server:
 ```
 import socket
-
 s = socket.socket()
-s.bind(('localhost', 8001))
+s.bind(('localhost', 8000))
 s.listen(5)
-print("RARP Server is listening on port 8001...")
+print("Server is listening for RARP requests...")
 c, addr = s.accept()
+print(f"Connection established with {addr}")
 
-address = {
+rarp_table = {
     "6A:08:AA:C2": "165.165.80.80",
     "8A:BC:E3:FA": "165.165.79.1"
 }
 
 while True:
     mac = c.recv(1024).decode()
-    print(f"Received MAC: {mac}")
-    ip = address.get(mac, "Not Found")
-    c.send(ip.encode())
+
+    if not mac:  
+        break
+
+    try:
+        ip = rarp_table[mac]  
+        print(f"MAC: {mac} -> IP: {ip}")
+        c.send(ip.encode())  
+    except KeyError:
+        print(f"MAC: {mac} not found in RARP table.")
+        c.send("Not Found".encode())
+c.close()
+s.close()
 ```
 Client:
 ```
 import socket
-
-s = socket.socket()
-s.connect(('localhost', 8001))
+c = socket.socket()
+c.connect(('localhost', 8000))
 
 while True:
-    mac = input("Enter Physical Address (MAC): ")
-    s.send(mac.encode())
-    print("IP Address:", s.recv(1024).decode())
+    mac = input("Enter MAC address to find IP (or type 'exit' to quit): ")
+    if mac.lower() == "exit":  
+        break
+    c.send(mac.encode())
+    ip = c.recv(1024).decode()
+    print(f"IP Address for {mac}: {ip}")
+c.close()
 ```
     
 ## OUPUT -RARP
-```
-Client Input:
-Enter Physical Address (MAC): 6A:08:AA:C2
+Server:
+![WhatsApp Image 2026-02-11 at 10 58 34 AM](https://github.com/user-attachments/assets/9fe202e2-cab4-45f2-863d-a0ea9716160f)
+Client:
+![WhatsApp Image 2026-02-11 at 10 58 35 AM (2)](https://github.com/user-attachments/assets/99665cac-76c3-47ac-9fd7-21d0fcb0f61f)
 
-Server Output:
-Received MAC: 6A:08:AA:C2
 
-Client Output:
-IP Address: 165.165.80.80
-```
 ## RESULT
 Thus, the python program for simulating ARP protocols using TCP was successfully 
 executed.
